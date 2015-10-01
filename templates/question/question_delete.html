@@ -1,8 +1,0 @@
-{% extends 'base.html'}
-{% block content %}
-<p class="lead">Are yousure you want to delete "{{ question.title }}
-<form method="post" action="">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-primary">Delete</button>
-</form>
-{% endblock %}
