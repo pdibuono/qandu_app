@@ -104,18 +104,28 @@ class AnswerDeleteView(DeleteView):
         return object
 
 class VoteFormView(FormView):
-    form_class = VoteForm
+  form_class = VoteForm
 
-    def form_valid(self, form):
-        user = self.request.user
-        question = Question.objects.get(pk=form.data["question"])
+  def form_valid(self, form):
+    user = self.request.user
+    question = Question.objects.get(pk=form.data["question"])
+    try:
+      answer = Answer.objects.get(pk=form.data["answer"])
+      prev_votes = Vote.objects.filter(user=user, answer=answer)
+      has_voted = (prev_votes.count()>0)
+      if not has_voted:
+          Vote.objects.create(user=user, answer=answer)
+      else:
+          prev_votes[0].delete()
+      return redirect(reverse('question_detail', args=[form.data["question"]]))
+    except:
         prev_votes = Vote.objects.filter(user=user, question=question)
         has_voted = (prev_votes.count()>0)
         if not has_voted:
             Vote.objects.create(user=user, question=question)
         else:
             prev_votes[0].delete()
-        return redirect('question_list')
+    return redirect('question_list')
 
 class UserDetailView(DetailView):
     model = User
@@ -131,5 +141,20 @@ class UserDetailView(DetailView):
         answers = Answer.objects.filter(user=user_in_view)
         context['answers'] = answers
         return context
+      
+class UserUpdateView(UpdateView):
+    model = User
+    slug_field = "username"
+    template_name = "user/user_form.html"
+    fields = ['email', 'first_name', 'last_name']
+    
+    def get_success_url(self):
+        return reverse('user_detail', args=[self.request.user.username])
+      
+    def get_object(self, *args, **kwargs):
+        object = super(UserUpdateView, self).get_object(*args, **kwargs)
+        if object != self.request.user:
+          raise PermissionDenied()
+        return object
 
 
